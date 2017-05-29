@@ -144,7 +144,7 @@ class Board:
             scr.addstr(y + 1, x, ' (()) ')
             scr.addstr(y + 2, x, '      ')
 
-    def setupGame(self, stonesPerPlayer):
+    def setupGame(self, stonesPerPlayer): # Place stones on the board for each player
         width = self.size[0]
         height = self.size[1]
 
@@ -159,14 +159,14 @@ class Board:
             wy = height - 1 - int((2 * i) / width)
             self.setTile((wx, wy), WHITE)
 
-    def withinBounds(self, pos):
+    def withinBounds(self, pos): # Check if pos is a position on the board
         if pos[0] < 0 or pos[0] > self.size[0] - 1:
             return False
         if pos[1] < 0 or pos[1] > self.size[1] - 1:
             return False
         return True
 
-    def checkCaptures(self, player):
+    def checkCaptures(self, player): # Check if the the player has to capture a stone
         captures = []
         playerK = player + 1
 
@@ -188,7 +188,7 @@ class Board:
                 # Current Tile contains no stone or stone which doesn't belong to player
         self.captures = captures
 
-    def checkKingCapture(self, pos, player):
+    def checkKingCapture(self, pos, player): # Check if king at pos has to capture any stone
         opp = (player + 2) % 4
         oppK = opp + 1
 
@@ -287,7 +287,7 @@ class Board:
         if capPosses:
             return (pos, capPosses, newPossesses)
 
-    def checkNormalCapture(self, pos, player):
+    def checkNormalCapture(self, pos, player): # Check if stone at pos has to capture any stone
         opp = (player + 2) % 4
         oppK = opp + 1
         ul = tuple(map(sum, zip(pos, UP_LEFT)))
@@ -311,7 +311,7 @@ class Board:
         if capPosses and newPosses:
             return (pos, capPosses, [newPosses])
 
-    def checkMove(self, pos, player):
+    def checkMove(self, pos, player): # Check available moves for stone at pos
         playerKing = player + 1
         t = self.getTile(pos)
         result = []
@@ -354,8 +354,8 @@ class Board:
 
         return result
 
-    def select(self):
-        if not self.captures:  # Normal select
+    def select(self): # Select tile at current cursor position
+        if not self.captures: # Select when no captures are mandatory
             if self.tSelect:
                 for t in self.tSelect[1]:
                     if t == tuple(self.cursor):
@@ -371,8 +371,8 @@ class Board:
                 if moves:
                     self.tSelect = ((x, y), moves)
 
-        else:  # Can only select stones that can capture
-            if self.tSelect:
+        else: # Can only select stones that can capture
+            if self.tSelect: # A capture has already been selected
                 pos = self.tSelect[0]
                 t = self.getTile(pos)
                 captures = self.tSelect[1]
@@ -393,32 +393,42 @@ class Board:
                             else:
                                 self.endTurn()
 
-            else:
+            else: # No capture has been selected yet
                 for cap in self.captures:
                     if cap[0] == tuple(self.cursor):
-                        self.tSelect = cap
+                        self.tSelect = cap # Select capture at cursor position
 
     def endTurn(self):
+        # Rest values
         self.tSelect = []
         self.captures = []
+
+        # Check for stones that can be upgraded to a king
         for i in range(5):
+            # Black stones
             xb = 2 * i + 1
             yb = self.size[1] - 1
             tb = self.getTile((xb, yb))
             if tb == BLACK:
                 self.setTile((xb, xy), BLACK_KING)
+
+            # White stones
             xw = 2 * i
             yw = 0
             tw = self.getTile((xw, yw))
             if tw == WHITE:
                 self.setTile((xw, yw), WHITE_KING)
+
         self.checkWin()
         self.nextPlayer()
+        # Check if new player has to capture
         self.checkCaptures(self.currentPlayer)
 
     def checkWin(self):
         black = 0
         white = 0
+
+        # Count number of stones per color
         for j in range(self.size[1]):
             for i in range(self.size[0]):
                 t = self.getTile((i, j))
@@ -427,7 +437,9 @@ class Board:
                 elif t == WHITE or t == WHITE_KING:
                     white += 1
 
+        # If no black stones are left white wins
         if black == 0:
             self.win = WHITE
+        # if no white stones are left black wins
         elif white == 0:
             self.win = BLACK
